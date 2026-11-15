@@ -1,4 +1,4 @@
-# ALU Logo dApp — Assignment 2
+# ALU dApp — Assignment 2
 
 A fully working decentralized application (dApp) that connects to the **ALUAssetRegistry** (ERC-721) and **ALULogoToken** (ERC-20) smart contracts from Formative 1. Built with Next.js, TypeScript, ethers.js, and Tailwind CSS.
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ALU Logo dApp",
+  title: "ALU dApp",
   description: "Decentralized application for ALU logo registration and verification.",
 };
 

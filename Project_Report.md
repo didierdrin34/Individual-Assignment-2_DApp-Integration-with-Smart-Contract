@@ -1,4 +1,4 @@
-# Project Report — ALU Logo dApp
+# Project Report — ALU dApp
 ## Individual Assignment 2: DApp Integration with Smart Contract
 
 **Student:** [Your Name]

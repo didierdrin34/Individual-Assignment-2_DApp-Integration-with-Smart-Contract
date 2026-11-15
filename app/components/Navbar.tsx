@@ -9,7 +9,7 @@ export default function Navbar() {
   return (
     <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-6">
-        <Link href="/" className="font-bold text-blue-700 text-lg">ALU Logo dApp</Link>
+        <Link href="/" className="font-bold text-blue-700 text-lg">ALU dApp</Link>
         <Link href="/register" className="text-sm text-slate-600 hover:text-blue-600 transition">Register</Link>
         <Link href="/verify" className="text-sm text-slate-600 hover:text-blue-600 transition">Verify</Link>
         <Link href="/dashboard" className="text-sm text-slate-600 hover:text-blue-600 transition">Dashboard</Link>

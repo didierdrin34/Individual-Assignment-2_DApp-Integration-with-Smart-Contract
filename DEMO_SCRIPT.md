@@ -1,4 +1,4 @@
-# Demo Video Script — ALU Logo dApp
+# Demo Video Script — ALU dApp
 ## Estimated Duration: 4–6 minutes
 
 ---
@@ -17,7 +17,7 @@
 
 **[Screen: home page at localhost:3000]**
 
-> "Hi, I'm [Name]. This is my ALU Logo dApp — a decentralized application built with Next.js and ethers.js that connects to two Ethereum smart contracts I wrote in Formative 1: ALUAssetRegistry, an ERC-721 contract for registering the ALU logo, and ALULogoToken, an ERC-20 contract for ownership shares.
+> "Hi, I'm [Name]. This is my ALU dApp — a decentralized application built with Next.js and ethers.js that connects to two Ethereum smart contracts I wrote in Formative 1: ALUAssetRegistry, an ERC-721 contract for registering the ALU logo, and ALULogoToken, an ERC-20 contract for ownership shares.
 >
 > The dApp has three features: Register, Verify, and Dashboard. Let me walk through each one."
 
@@ -137,7 +137,7 @@
 
 **[Screen: home page]**
 
-> "That's the full ALU Logo dApp. Smart contracts on the backend, Next.js on the frontend, ethers.js connecting them, and MetaMask handling all transaction signing. The verify page works for anyone without a wallet, and the entire hash computation happens in the browser — no servers, no trust required.
+> "That's the full ALU dApp. Smart contracts on the backend, Next.js on the frontend, ethers.js connecting them, and MetaMask handling all transaction signing. The verify page works for anyone without a wallet, and the entire hash computation happens in the browser — no servers, no trust required.
 >
 > Thank you."
 
