@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText, ScanSearch, BarChart3 } from "lucide-react";
 import Navbar from "./components/Navbar";
 
 export default function Home() {
@@ -19,7 +20,7 @@ export default function Home() {
             href="/register"
             className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition"
           >
-            <span className="text-3xl">📝</span>
+            <FileText className="w-8 h-8 text-blue-600" />
             <span className="font-semibold text-slate-800">Register Logo</span>
             <span className="text-sm text-slate-500 text-center">
               Upload a logo file, generate its SHA-256 hash, and register it as an NFT.
@@ -30,7 +31,7 @@ export default function Home() {
             href="/verify"
             className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border border-slate-200 hover:border-green-400 hover:shadow-md transition"
           >
-            <span className="text-3xl">🔍</span>
+            <ScanSearch className="w-8 h-8 text-green-600" />
             <span className="font-semibold text-slate-800">Verify Logo</span>
             <span className="text-sm text-slate-500 text-center">
               Check whether any logo file matches the authentic registered ALU logo.
@@ -41,7 +42,7 @@ export default function Home() {
             href="/dashboard"
             className="flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border border-slate-200 hover:border-purple-400 hover:shadow-md transition"
           >
-            <span className="text-3xl">📊</span>
+            <BarChart3 className="w-8 h-8 text-purple-600" />
             <span className="font-semibold text-slate-800">Token Dashboard</span>
             <span className="text-sm text-slate-500 text-center">
               View ALUT token ownership and distribute shares to stakeholders.

@@ -1,10 +1,47 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { ethers } from "ethers";
+import { Upload, CheckCircle2, XCircle, Info, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { useWallet } from "../../lib/useWallet";
-import { getRegistryContract } from "../../lib/contracts";
+import { getRegistryContract, REGISTRY_ADDRESS } from "../../lib/contracts";
 import { hashFile } from "../../lib/utils";
+
+const TRANSFER_TOPIC = ethers.id("Transfer(address,address,uint256)");
+
+// Finds the new token ID in a registration receipt.
+// 1) Try the AssetRegistered event. 2) Fall back to the ERC-721 mint Transfer event.
+function extractTokenId(
+  receipt: ethers.TransactionReceipt,
+  registry: ethers.Contract
+): bigint | null {
+  const mine = receipt.logs.filter(
+    (l) => l.address.toLowerCase() === REGISTRY_ADDRESS.toLowerCase()
+  );
+
+  for (const log of mine) {
+    try {
+      const parsed = registry.interface.parseLog({ topics: [...log.topics], data: log.data });
+      if (parsed?.name === "AssetRegistered") return BigInt(parsed.args.tokenId);
+    } catch {
+      /* not this event */
+    }
+  }
+
+  for (const log of mine) {
+    if (
+      log.topics[0] === TRANSFER_TOPIC &&
+      log.topics.length === 4 &&
+      BigInt(log.topics[1]) === BigInt(0) // from = zero address, i.e. a mint
+    ) {
+      return BigInt(log.topics[3]);
+    }
+  }
+  return null;
+}
+
+type Status = { type: "success" | "error" | "info"; msg: string };
 
 export default function RegisterPage() {
   const { signer, address, connect } = useWallet();
@@ -12,7 +49,7 @@ export default function RegisterPage() {
   const [hash, setHash] = useState("");
   const [assetName, setAssetName] = useState("");
   const [fileType, setFileType] = useState("png");
-  const [status, setStatus] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
+  const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -40,24 +77,34 @@ export default function RegisterPage() {
       const tx = await registry.registerAsset(assetName.trim(), fileType, hash);
       setStatus({ type: "info", msg: "Transaction submitted. Waiting for confirmation…" });
       const receipt = await tx.wait();
-      const event = receipt.logs
-        .map((log: { topics: string[]; data: string }) => {
-          try { return registry.interface.parseLog(log); } catch { return null; }
-        })
-        .find((e: { name: string } | null) => e?.name === "AssetRegistered");
-      const tokenId = event?.args?.tokenId?.toString() ?? "?";
-      setStatus({ type: "success", msg: `✅ Asset registered! Token ID: ${tokenId}` });
+      if (!receipt) throw new Error("No receipt returned for the transaction.");
+
+      const id = extractTokenId(receipt, registry);
+      if (id !== null) {
+        setStatus({
+          type: "success",
+          msg: `Asset registered! Token ID: ${id.toString()} (hex: 0x${id.toString(16)})`,
+        });
+      } else {
+        setStatus({
+          type: "success",
+          msg: `Asset registered, but the Token ID could not be read. Transaction: ${receipt.hash}`,
+        });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("duplicate content hash")) {
-        setStatus({ type: "error", msg: "❌ This hash is already registered on the blockchain." });
+        setStatus({ type: "error", msg: "This hash is already registered on the blockchain." });
       } else {
-        setStatus({ type: "error", msg: `❌ ${msg}` });
+        setStatus({ type: "error", msg });
       }
     } finally {
       setLoading(false);
     }
   }
+
+  const StatusIcon =
+    status?.type === "success" ? CheckCircle2 : status?.type === "error" ? XCircle : Info;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -85,8 +132,8 @@ export default function RegisterPage() {
               {preview ? (
                 <img src={preview} alt="preview" className="max-h-40 mx-auto rounded-lg object-contain" />
               ) : (
-                <div className="text-slate-400">
-                  <div className="text-4xl mb-2">📁</div>
+                <div className="text-slate-400 flex flex-col items-center">
+                  <Upload className="w-10 h-10 mb-2" />
                   <p className="text-sm">Click to select an image file</p>
                 </div>
               )}
@@ -127,20 +174,26 @@ export default function RegisterPage() {
 
             {/* Status */}
             {status && (
-              <div className={`p-3 rounded-lg text-sm ${
-                status.type === "success" ? "bg-green-50 text-green-700 border border-green-200" :
-                status.type === "error" ? "bg-red-50 text-red-700 border border-red-200" :
-                "bg-blue-50 text-blue-700 border border-blue-200"
-              }`}>
-                {status.msg}
+              <div
+                className={`p-3 rounded-lg text-sm flex items-start gap-2 ${
+                  status.type === "success"
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : status.type === "error"
+                    ? "bg-red-50 text-red-700 border border-red-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                }`}
+              >
+                <StatusIcon className="w-4 h-4 mt-0.5 shrink-0" />
+                <span className="break-all min-w-0">{status.msg}</span>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading || !hash}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold py-3 rounded-xl transition"
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"
             >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Processing…" : "Register Asset on Blockchain"}
             </button>
           </form>

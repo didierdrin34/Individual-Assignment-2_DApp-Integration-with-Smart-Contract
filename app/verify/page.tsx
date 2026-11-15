@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Upload, ShieldCheck, ShieldAlert, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { getRegistryContract, getReadonlyProvider } from "../../lib/contracts";
 import { hashFile, normaliseHash } from "../../lib/utils";
@@ -13,10 +14,18 @@ type VerifyResult = {
   message: string;
 };
 
+function parseTokenId(input: string): bigint {
+  const s = input.trim();
+  if (/^0x[0-9a-fA-F]+$/.test(s)) return BigInt(s);
+  if (/^\d+$/.test(s)) return BigInt(s);
+  if (/^[0-9a-fA-F]+$/.test(s)) return BigInt("0x" + s);
+  throw new Error("Token ID must be a decimal number or a hex value (0x…).");
+}
+
 export default function VerifyPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [hash, setHash] = useState("");
-  const [tokenId, setTokenId] = useState("1");
+  const [tokenId, setTokenId] = useState("");
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,13 +44,14 @@ export default function VerifyPage() {
     setLoading(true);
     setResult(null);
     try {
+      const id = parseTokenId(tokenId);
       const normHash = normaliseHash(hash);
       const provider = getReadonlyProvider();
       const registry = getRegistryContract(provider);
-      const [ok, msg] = await registry.verifyLogoIntegrity(BigInt(tokenId), normHash);
+      const [ok] = await registry.verifyLogoIntegrity(id, normHash);
 
       if (ok) {
-        const asset = await registry.getAsset(BigInt(tokenId));
+        const asset = await registry.getAsset(id);
         setResult({
           ok: true,
           message: "Logo Verified: This is the authentic ALU logo.",
@@ -50,10 +60,17 @@ export default function VerifyPage() {
           timestamp: new Date(Number(asset.timestamp) * 1000).toLocaleString(),
         });
       } else {
-        setResult({ ok: false, message: "Warning: This logo has been modified or does not match the registered asset." });
+        setResult({
+          ok: false,
+          message: "Warning: This logo has been modified or does not match the registered asset.",
+        });
       }
     } catch (err: unknown) {
-      setResult({ ok: false, message: `Error: ${err instanceof Error ? err.message : String(err)}` });
+      const raw = err instanceof Error ? err.message : String(err);
+      const message = raw.includes("ERC721NonexistentToken")
+        ? "Error: No asset is registered under that Token ID."
+        : `Error: ${raw}`;
+      setResult({ ok: false, message });
     } finally {
       setLoading(false);
     }
@@ -81,8 +98,8 @@ export default function VerifyPage() {
               {preview ? (
                 <img src={preview} alt="preview" className="max-h-40 mx-auto rounded-lg object-contain" />
               ) : (
-                <div className="text-slate-400">
-                  <div className="text-4xl mb-2">🖼️</div>
+                <div className="text-slate-400 flex flex-col items-center">
+                  <Upload className="w-10 h-10 mb-2" />
                   <p className="text-sm">Click to upload a logo for verification</p>
                 </div>
               )}
@@ -111,38 +128,48 @@ export default function VerifyPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Token ID to verify against</label>
               <input
-                type="number"
-                min="1"
+                type="text"
                 value={tokenId}
                 onChange={(e) => setTokenId(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Decimal or hex, e.g. 0x1a2b… or 12345"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-400"
               />
+              <p className="text-xs text-slate-400 mt-1">
+                Use the Token ID shown after registration. Decimal and hex are both accepted.
+              </p>
             </div>
 
             <button
               type="submit"
-              disabled={loading || !hash}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-semibold py-3 rounded-xl transition"
+              disabled={loading || !hash || !tokenId.trim()}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"
             >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Verifying…" : "Verify Logo"}
             </button>
           </form>
 
           {/* Result */}
           {result && (
-            <div className={`mt-8 p-6 rounded-2xl border-2 ${
-              result.ok
-                ? "bg-green-50 border-green-400 text-green-800"
-                : "bg-red-50 border-red-400 text-red-800"
-            }`}>
+            <div
+              className={`mt-8 p-6 rounded-2xl border-2 ${
+                result.ok
+                  ? "bg-green-50 border-green-400 text-green-800"
+                  : "bg-red-50 border-red-400 text-red-800"
+              }`}
+            >
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-4xl">{result.ok ? "✅" : "⚠️"}</span>
-                <p className="font-bold text-lg">{result.message}</p>
+                {result.ok ? (
+                  <ShieldCheck className="w-10 h-10 shrink-0" />
+                ) : (
+                  <ShieldAlert className="w-10 h-10 shrink-0" />
+                )}
+                <p className="font-bold text-lg break-words min-w-0">{result.message}</p>
               </div>
               {result.ok && (
                 <div className="text-sm space-y-1 mt-3 border-t border-green-200 pt-3">
                   <p><span className="font-medium">Asset Name:</span> {result.assetName}</p>
-                  <p><span className="font-medium">Registered By:</span> <span className="font-mono text-xs">{result.registeredBy}</span></p>
+                  <p><span className="font-medium">Registered By:</span> <span className="font-mono text-xs break-all">{result.registeredBy}</span></p>
                   <p><span className="font-medium">Registration Date:</span> {result.timestamp}</p>
                 </div>
               )}
