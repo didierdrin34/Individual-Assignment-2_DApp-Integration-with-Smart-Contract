@@ -6,11 +6,12 @@ import { useWallet } from "../../lib/useWallet";
 import { getTokenContract, getReadonlyProvider } from "../../lib/contracts";
 import { ethers } from "ethers";
 
+
 const EXAMPLE_WALLETS = [
-  { label: "Deployer (Account 0)", address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" },
-  { label: "Faculty Rep (Account 1)", address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" },
-  { label: "Student Union (Account 2)", address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" },
-];
+  { label: "Deployer (Owner)", address: process.env.NEXT_PUBLIC_WALLET_OWNER || "" },
+  { label: "Faculty Rep", address: process.env.NEXT_PUBLIC_WALLET_2 || "" },
+  { label: "Student Union", address: process.env.NEXT_PUBLIC_WALLET_3 || "" },
+].filter((w) => ethers.isAddress(w.address));
 
 type HolderInfo = { label: string; address: string; balance: string; pct: string };
 
